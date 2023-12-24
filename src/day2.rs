@@ -37,7 +37,7 @@ impl From<String> for Set {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Game {
     id: i32,
     sets: Vec<Set>,
@@ -52,6 +52,27 @@ impl Game {
             }
         }
         valid
+    }
+
+    fn power_of_sets(&self) -> i32 {
+        let mut max_red = 0;
+        let mut max_green = 0;
+        let mut max_blue = 0;
+        for set in self.sets.iter() {
+            if set.red > max_red {
+                max_red = set.red;
+            }
+            if set.green > max_green {
+                max_green = set.green;
+            }
+            if set.blue > max_blue {
+                max_blue = set.blue;
+            }
+        }
+        vec![max_red, max_green, max_blue]
+            .into_iter()
+            .filter(|x| *x > 0)
+            .product::<i32>()
     }
 }
 
@@ -80,10 +101,15 @@ fn main() {
         green: 13,
         red: 12,
     };
-    for game in games {
+    for game in games.clone() {
         if game.is_valid(max_set) {
             id_sum += game.id;
         }
     }
     println!("id_sum: {}", id_sum);
+    let mut power_of_sets_sum = 0;
+    for game in games {
+        power_of_sets_sum += game.power_of_sets();
+    }
+    println!("power_of_sets_sum: {}", power_of_sets_sum);
 }
