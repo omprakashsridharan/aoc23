@@ -1,5 +1,8 @@
+use std::collections::BTreeMap;
+
 mod readfile;
 
+#[derive(Debug)]
 struct Pair {
     first_index: i32,
     first_digit: i32,
@@ -22,32 +25,32 @@ impl CalibrationLineItem {
     fn value(&self) -> Option<i32> {
         let number_indices = self.number_indices();
         let text_indices = self.text_indices();
-        if number_indices.is_none() && text_indices.is_none() {
-            return None;
-        }
+
         let number_indices = number_indices.unwrap_or_else(|| Pair {
             first_index: i32::MAX,
             first_digit: 0,
-            last_index: i32::MAX,
+            last_index: i32::MIN,
             last_digit: 0,
         });
         let text_indices = text_indices.unwrap_or_else(|| Pair {
             first_index: i32::MAX,
             first_digit: 0,
-            last_index: i32::MAX,
+            last_index: i32::MIN,
             last_digit: 0,
         });
-        let first = if number_indices.first_index < text_indices.first_index {
+        let first = if number_indices.first_index <= text_indices.first_index {
             number_indices.first_digit
         } else {
             text_indices.first_digit
         };
-        let second = if number_indices.last_index < text_indices.last_index {
+        let second = if number_indices.last_index >= text_indices.last_index {
             number_indices.last_digit
         } else {
             text_indices.last_digit
         };
-        Some((first * 10) + second)
+        let value = (first * 10) + second;
+        dbg!(value);
+        Some(value)
     }
 
     fn number_indices(&self) -> Option<Pair> {
@@ -79,7 +82,25 @@ impl CalibrationLineItem {
     }
 
     fn text_indices(&self) -> Option<Pair> {
-        None
+        let mut pairs: BTreeMap<i32, i32> = BTreeMap::new();
+        let nums = vec![
+            "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+        ];
+        for (ind, num) in nums.into_iter().enumerate() {
+            let found_indices: Vec<_> = self.line.match_indices(num).collect();
+            for (fi, _) in found_indices {
+                pairs.insert(fi as i32, ind as i32);
+            }
+        }
+        if pairs.len() == 0 {
+            return None;
+        }
+        Some(Pair {
+            first_index: *pairs.first_key_value().unwrap().0,
+            first_digit: *pairs.first_key_value().unwrap().1,
+            last_index: *pairs.last_key_value().unwrap().0,
+            last_digit: *pairs.last_key_value().unwrap().1,
+        })
     }
 }
 
@@ -93,7 +114,6 @@ fn main() {
         "{}",
         calibration_line_items
             .iter()
-            .filter(|item| item.value().is_some())
             .map(|item| item.value().unwrap())
             .sum::<i32>()
     );
