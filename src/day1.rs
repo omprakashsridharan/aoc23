@@ -49,7 +49,6 @@ impl CalibrationLineItem {
             text_indices.last_digit
         };
         let value = (first * 10) + second;
-        dbg!(value);
         Some(value)
     }
 
